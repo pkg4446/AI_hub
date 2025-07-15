@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YOLO Annotation Visualizer</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            font-weight: 300;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        .upload-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+        
+        .upload-box {
+            border: 3px dashed #4a90e2;
+            border-radius: 15px;
+            padding: 30px;
+            text-align: center;
+            transition: all 0.3s ease;
+            background: linear-gradient(45deg, #f8f9fa, #e9ecef);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .upload-box:hover {
+            border-color: #357abd;
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(74, 144, 226, 0.2);
+        }
+        
+        .upload-box.drag-over {
+            border-color: #28a745;
+            background: linear-gradient(45deg, #d4edda, #c3e6cb);
+        }
+        
+        .upload-box h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+        
+        .file-input {
+            display: none;
+        }
+        
+        .file-label {
+            display: inline-block;
+            padding: 12px 24px;
+            background: linear-gradient(45deg, #4a90e2, #357abd);
+            color: white;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .file-label:hover {
+            background: linear-gradient(45deg, #357abd, #2968a3);
+            transform: scale(1.05);
+        }
+        
+        .file-status {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 8px;
+            font-weight: 500;
+        }
+        
+        .file-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .file-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .visualization-area {
+            text-align: center;
+            margin-top: 30px;
+        }
+        
+        .canvas-container {
+            position: relative;
+            display: inline-block;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            background: #fff;
+        }
+        
+        #canvas {
+            max-width: 100%;
+            height: auto;
+            display: block;
+        }
+        
+        .controls {
+            margin: 20px 0;
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 10px 15px;
+            border-radius: 25px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .control-group label {
+            font-weight: 500;
+            color: #2c3e50;
+        }
+        
+        input[type="range"] {
+            width: 120px;
+        }
+        
+        input[type="color"] {
+            width: 40px;
+            height: 30px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        
+        .info-panel {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 15px;
+            padding: 20px;
+            margin-top: 20px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+        
+        .info-panel h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+        }
+        
+        .annotation-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .annotation-item {
+            background: linear-gradient(45deg, #f8f9fa, #e9ecef);
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 4px solid #4a90e2;
+            transition: all 0.3s ease;
+        }
+        
+        .annotation-item:hover {
+            transform: translateX(5px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        @media (max-width: 768px) {
+            .upload-section {
+                grid-template-columns: 1fr;
+            }
+            
+            .controls {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .control-group {
+                width: 100%;
+                max-width: 300px;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎯 YOLO Annotation Visualizer</h1>
+        
+        <div class="upload-section">
+            <div class="upload-box" id="imageUpload">
+                <h3>📸 이미지 파일</h3>
+                <label for="imageFile" class="file-label">이미지 선택</label>
+                <input type="file" id="imageFile" class="file-input" accept="image/*">
+                <div class="file-status hidden" id="imageStatus"></div>
+            </div>
+            
+            <div class="upload-box" id="annotationUpload">
+                <h3>📝 YOLO Annotation 파일</h3>
+                <label for="annotationFile" class="file-label">텍스트 파일 선택</label>
+                <input type="file" id="annotationFile" class="file-input" accept=".txt">
+                <div class="file-status hidden" id="annotationStatus"></div>
+            </div>
+        </div>
+        
+        <div class="visualization-area">
+            <div class="controls">
+                <div class="control-group">
+                    <label>박스 두께:</label>
+                    <input type="range" id="lineWidth" min="1" max="10" value="3">
+                    <span id="lineWidthValue">3</span>
+                </div>
+                <div class="control-group">
+                    <label>박스 색상:</label>
+                    <input type="color" id="boxColor" value="#ff0000">
+                </div>
+                <div class="control-group">
+                    <label>텍스트 크기:</label>
+                    <input type="range" id="fontSize" min="12" max="24" value="16">
+                    <span id="fontSizeValue">16</span>
+                </div>
+                <div class="control-group">
+                    <label>투명도:</label>
+                    <input type="range" id="opacity" min="0.1" max="1" step="0.1" value="0.8">
+                    <span id="opacityValue">0.8</span>
+                </div>
+            </div>
+            
+            <div class="canvas-container">
+                <canvas id="canvas"></canvas>
+            </div>
+        </div>
+        
+        <div class="info-panel hidden" id="infoPanel">
+            <h3>📊 Annotation 정보</h3>
+            <div id="annotationInfo"></div>
+            <div class="annotation-list" id="annotationList"></div>
+        </div>
+    </div>
+
+    <script>
+        let imageData = null;
+        let annotations = [];
+        let canvas, ctx;
+        let classNames = {};
+        
+        // 기본 클래스 이름들 (COCO 데이터셋 기준)
+        const defaultClasses = {
+            0: 'object', 1: 'object', 2: 'object', 3: 'object', 4: 'object',
+            5: 'object', 6: 'object', 7: 'object', 8: 'object', 9: 'object'
+        };
+        
+        // 색상 팔레트
+        const colors = [
+            '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FECA57',
+            '#FF9FF3', '#54A0FF', '#5F27CD', '#00D2D3', '#FF9F43',
+            '#10AC84', '#EE5A24', '#0984E3', '#6C5CE7', '#A29BFE'
+        ];
+        
+        function init() {
+            canvas = document.getElementById('canvas');
+            ctx = canvas.getContext('2d');
+            
+            // 이벤트 리스너 설정
+            document.getElementById('imageFile').addEventListener('change', handleImageUpload);
+            document.getElementById('annotationFile').addEventListener('change', handleAnnotationUpload);
+            
+            // 컨트롤 이벤트
+            document.getElementById('lineWidth').addEventListener('input', updateVisualization);
+            document.getElementById('boxColor').addEventListener('input', updateVisualization);
+            document.getElementById('fontSize').addEventListener('input', updateVisualization);
+            document.getElementById('opacity').addEventListener('input', updateVisualization);
+            
+            // 값 표시 업데이트
+            document.getElementById('lineWidth').addEventListener('input', function() {
+                document.getElementById('lineWidthValue').textContent = this.value;
+            });
+            document.getElementById('fontSize').addEventListener('input', function() {
+                document.getElementById('fontSizeValue').textContent = this.value;
+            });
+            document.getElementById('opacity').addEventListener('input', function() {
+                document.getElementById('opacityValue').textContent = this.value;
+            });
+            
+            // 드래그 앤 드롭 설정
+            setupDragAndDrop();
+        }
+        
+        function setupDragAndDrop() {
+            const imageUpload = document.getElementById('imageUpload');
+            const annotationUpload = document.getElementById('annotationUpload');
+            
+            [imageUpload, annotationUpload].forEach(element => {
+                element.addEventListener('dragover', handleDragOver);
+                element.addEventListener('dragleave', handleDragLeave);
+                element.addEventListener('drop', handleDrop);
+            });
+        }
+        
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.currentTarget.classList.add('drag-over');
+        }
+        
+        function handleDragLeave(e) {
+            e.preventDefault();
+            e.currentTarget.classList.remove('drag-over');
+        }
+        
+        function handleDrop(e) {
+            e.preventDefault();
+            e.currentTarget.classList.remove('drag-over');
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                const file = files[0];
+                if (e.currentTarget.id === 'imageUpload') {
+                    if (file.type.startsWith('image/')) {
+                        document.getElementById('imageFile').files = files;
+                        handleImageUpload({ target: { files: files } });
+                    }
+                } else if (e.currentTarget.id === 'annotationUpload') {
+                    if (file.type === 'text/plain' || file.name.endsWith('.txt')) {
+                        document.getElementById('annotationFile').files = files;
+                        handleAnnotationUpload({ target: { files: files } });
+                    }
+                }
+            }
+        }
+        
+        function handleImageUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    imageData = img;
+                    showStatus('imageStatus', `이미지 로드 완료: ${img.width}x${img.height}`, 'success');
+                    updateVisualization();
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+        
+        function handleAnnotationUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    parseYOLOAnnotation(e.target.result);
+                    showStatus('annotationStatus', `${annotations.length}개의 어노테이션 로드 완료`, 'success');
+                    updateVisualization();
+                    updateInfoPanel();
+                } catch (error) {
+                    showStatus('annotationStatus', '어노테이션 파일 파싱 오류', 'error');
+                }
+            };
+            reader.readAsText(file);
+        }
+        
+        function parseYOLOAnnotation(content) {
+            annotations = [];
+            const lines = content.trim().split('\n');
+            
+            lines.forEach(line => {
+                if (line.trim()) {
+                    const parts = line.trim().split(' ');
+                    if (parts.length >= 5) {
+                        annotations.push({
+                            class_id: parseInt(parts[0]),
+                            x_center: parseFloat(parts[1]),
+                            y_center: parseFloat(parts[2]),
+                            width: parseFloat(parts[3]),
+                            height: parseFloat(parts[4]),
+                            confidence: parts[5] ? parseFloat(parts[5]) : null
+                        });
+                    }
+                }
+            });
+        }
+        
+        function updateVisualization() {
+            if (!imageData) return;
+            
+            // 캔버스 크기 설정
+            canvas.width = imageData.width;
+            canvas.height = imageData.height;
+            
+            // 이미지 그리기
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(imageData, 0, 0);
+            
+            // 어노테이션 그리기
+            if (annotations.length > 0) {
+                drawAnnotations();
+            }
+        }
+        
+        function drawAnnotations() {
+            const lineWidth = parseInt(document.getElementById('lineWidth').value);
+            const boxColor = document.getElementById('boxColor').value;
+            const fontSize = parseInt(document.getElementById('fontSize').value);
+            const opacity = parseFloat(document.getElementById('opacity').value);
+            
+            annotations.forEach((ann, index) => {
+                const color = colors[ann.class_id % colors.length];
+                
+                // YOLO 형식을 픽셀 좌표로 변환
+                const x = (ann.x_center - ann.width / 2) * canvas.width;
+                const y = (ann.y_center - ann.height / 2) * canvas.height;
+                const width = ann.width * canvas.width;
+                const height = ann.height * canvas.height;
+                
+                // 박스 그리기
+                ctx.save();
+                ctx.globalAlpha = opacity;
+                ctx.strokeStyle = color;
+                ctx.lineWidth = lineWidth;
+                ctx.strokeRect(x, y, width, height);
+                
+                // 배경 박스 (텍스트용)
+                const className = defaultClasses[ann.class_id] || `class_${ann.class_id}`;
+                const confidenceText = ann.confidence ? ` (${(ann.confidence * 100).toFixed(1)}%)` : '';
+                const text = `${className}${confidenceText}`;
+                
+                ctx.font = `${fontSize}px Arial`;
+                const textWidth = ctx.measureText(text).width;
+                const textHeight = fontSize;
+                
+                ctx.fillStyle = color;
+                ctx.fillRect(x, y - textHeight - 5, textWidth + 10, textHeight + 5);
+                
+                // 텍스트 그리기
+                ctx.fillStyle = 'white';
+                ctx.fillText(text, x + 5, y - 5);
+                
+                ctx.restore();
+            });
+        }
+        
+        function updateInfoPanel() {
+            const infoPanel = document.getElementById('infoPanel');
+            const annotationInfo = document.getElementById('annotationInfo');
+            const annotationList = document.getElementById('annotationList');
+            
+            if (annotations.length === 0) {
+                infoPanel.classList.add('hidden');
+                return;
+            }
+            
+            infoPanel.classList.remove('hidden');
+            
+            // 통계 정보
+            const classCount = {};
+            annotations.forEach(ann => {
+                classCount[ann.class_id] = (classCount[ann.class_id] || 0) + 1;
+            });
+            
+            annotationInfo.innerHTML = `
+                <p><strong>총 객체 수:</strong> ${annotations.length}</p>
+                <p><strong>클래스 수:</strong> ${Object.keys(classCount).length}</p>
+            `;
+            
+            // 어노테이션 목록
+            annotationList.innerHTML = '';
+            annotations.forEach((ann, index) => {
+                const className = defaultClasses[ann.class_id] || `class_${ann.class_id}`;
+                const color = colors[ann.class_id % colors.length];
+                const confidenceText = ann.confidence ? ` (${(ann.confidence * 100).toFixed(1)}%)` : '';
+                
+                const item = document.createElement('div');
+                item.className = 'annotation-item';
+                item.style.borderLeftColor = color;
+                item.innerHTML = `
+                    <div><strong>${className}${confidenceText}</strong></div>
+                    <div>위치: (${(ann.x_center * 100).toFixed(1)}%, ${(ann.y_center * 100).toFixed(1)}%)</div>
+                    <div>크기: ${(ann.width * 100).toFixed(1)}% × ${(ann.height * 100).toFixed(1)}%</div>
+                `;
+                annotationList.appendChild(item);
+            });
+        }
+        
+        function showStatus(elementId, message, type) {
+            const element = document.getElementById(elementId);
+            element.textContent = message;
+            element.className = `file-status file-${type}`;
+            element.classList.remove('hidden');
+        }
+        
+        // 초기화
+        init();
+    </script>
+</body>
+</html>
