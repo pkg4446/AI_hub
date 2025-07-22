@@ -1,10 +1,10 @@
-# YOLO v11 커스텀 데이터셋 학습 (로컬 컴퓨터)
+# YOLO v11 커스텀 데이터셋 학습
 
-# 1. 필요한 패키지 설치 (터미널에서 실행)
+# 1. 패키지 설치 (터미널에서 실행)
 # pip install ultralytics
-# pip install matplotlib pandas opencv-python
+# pip install torch matplotlib pandas opencv-python
 
-# 필요한 라이브러리 import
+# 라이브러리 import
 import torch
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -25,8 +25,8 @@ else:
 
 # 2. 데이터셋 경로 설정 (실제 경로로 변경하세요)
 DATASET_ROOT = "./dataset"  # 데이터셋 루트 폴더
-PROJECT_NAME = "yolo_training"  # 프로젝트 이름
-EXPERIMENT_NAME = "exp1"  # 실험 이름
+PROJECT_NAME = "beekeeping"  # 프로젝트 이름
+EXPERIMENT_NAME = "dreambee"  # 실험 이름
 
 # 3. 데이터셋 구조 예시
 """
@@ -77,8 +77,8 @@ names:
     print(f"Dataset YAML 파일이 생성되었습니다: {yaml_path}")
     return yaml_path
 
-# 클래스 이름 설정 (실제 클래스명으로 변경하세요)
-CLASS_NAMES = ['class1', 'class2', 'class3']  # 실제 클래스명으로 변경
+# 클래스 이름 설정
+CLASS_NAMES = ['egg', 'lava', 'pupa', 'bee', 'queen', 'Chalkbrood']  # 클래스명
 yaml_file = create_dataset_yaml(DATASET_ROOT, CLASS_NAMES)
 
 # 5. 데이터셋 통계 확인 함수
@@ -195,10 +195,10 @@ def train_yolo_model(yaml_path, project_name, experiment_name):
     """YOLO v11 모델 학습"""
     
     # 사전 훈련된 모델 로드
-    model = YOLO('yolo11n.pt')  # nano 버전 (빠름, 정확도 낮음)
+    # model = YOLO('yolo11n.pt')  # nano 버전 (빠름, 정확도 낮음)
     # model = YOLO('yolo11s.pt')  # small 버전 (균형)
     # model = YOLO('yolo11m.pt')  # medium 버전 (느림, 정확도 높음)
-    # model = YOLO('yolo11l.pt')  # large 버전 (매우 느림, 매우 높은 정확도)
+    model = YOLO('yolo11l.pt')  # large 버전 (매우 느림, 매우 높은 정확도)
     
     print("모델 학습을 시작합니다...")
     
@@ -213,7 +213,7 @@ def train_yolo_model(yaml_path, project_name, experiment_name):
         project=project_name,         # 프로젝트 폴더명
         name=experiment_name,         # 실험명
         save=True,                    # 모델 저장
-        save_period=10,               # N 에포크마다 체크포인트 저장
+        save_period=5,                # N 에포크마다 체크포인트 저장
         patience=20,                  # Early stopping patience
         resume=False,                 # 중단된 학습 재개시 True
         amp=True,                     # Automatic Mixed Precision
