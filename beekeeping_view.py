@@ -105,6 +105,6 @@ if __name__ == "__main__":
     # detect_with_custom_settings('beekeeping_image.jpg', conf_threshold=0.6, classes=[0,1,2])
     
     # 결과를 JSON으로 저장
-    # save_results_to_json('beekeeping_image.jpg')
+    save_results_to_json('beekeeping_image.jpg')
     
     print("YOLO11 탐지 완료!")
