@@ -1,0 +1,6 @@
+egg
+lava
+pupa
+bee
+queen
+drone
