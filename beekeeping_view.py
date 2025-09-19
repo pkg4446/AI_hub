@@ -10,7 +10,7 @@ model = YOLO('yolo11l.pt')
 # 2. 이미지에서 객체 탐지
 def detect_objects_image(image_path):
     """이미지에서 객체 탐지"""
-    results = model(image_path)
+    results = model(image_path, conf=0.3)
     
     # 결과 시각화
     annotated_img = results[0].plot()
@@ -61,7 +61,14 @@ def detect_with_custom_settings(image_path, conf_threshold=0.5, classes=None):
     results = model(image_path, conf=conf_threshold, classes=classes)
     
     # 결과 시각화
-    annotated_img = results[0].plot()
+    annotated_img = results[0].plot(
+        line_width=1,           # 박스 선 두께
+        font_size=1,            # 텍스트 크기  
+        conf=True,              # 신뢰도 표시
+        labels=False,           # 라벨 표시
+        boxes=True,             # 박스 표시
+        probs=True              # 분류 확률 표시 여부
+    )
     cv2.imwrite('custom_result.jpg', annotated_img)
     
     return results
@@ -105,6 +112,6 @@ if __name__ == "__main__":
     # detect_with_custom_settings('beekeeping_image.jpg', conf_threshold=0.6, classes=[0,1,2])
     
     # 결과를 JSON으로 저장
-    save_results_to_json('beekeeping_image.jpg')
+    # save_results_to_json('beekeeping_image.jpg')
     
     print("YOLO11 탐지 완료!")
