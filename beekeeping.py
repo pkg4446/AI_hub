@@ -36,7 +36,11 @@ dataset/
 │   │   ├── img1.jpg
 │   │   ├── img2.jpg
 │   │   └── ...
-│   └── val/
+│   ├── val/
+│   │   ├── img1.jpg
+│   │   ├── img2.jpg
+│   │   └── ...
+│   └── test/  # 선택적 테스트 세트
 │       ├── img1.jpg
 │       ├── img2.jpg
 │       └── ...
@@ -45,7 +49,11 @@ dataset/
     │   ├── img1.txt
     │   ├── img2.txt
     │   └── ...
-    └── val/
+    ├── val/
+    │   ├── img1.txt
+    │   ├── img2.txt
+    │   └── ...
+    └── test/  # 선택적 테스트 라벨
         ├── img1.txt
         ├── img2.txt
         └── ...
@@ -380,9 +388,13 @@ def main():
     print("\n📊 학습 결과 시각화...")
     plot_training_results(results_path)
     
+    # 테스트 경로 목록 준비
+    test_paths = []
+    if os.path.exists(os.path.join(DATASET_ROOT, 'images/test')):
+        test_paths.append(os.path.join(DATASET_ROOT, 'images/test'))
     # 모델 평가
     print("\n🔍 모델 평가 및 테스트...")
-    model = evaluate_and_test_model(results_path, yaml_file)
+    model = evaluate_and_test_model(results_path, yaml_file, test_paths)
     
     print(f"\n✅ 학습 완료!")
     print(f"📁 결과 폴더: {results_path}")
